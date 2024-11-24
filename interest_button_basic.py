@@ -12,9 +12,8 @@ def test_func(event):
 
     if touch_detection:
         nao.tts.request(NaoqiTextToSpeechRequest("Oh, I understand you would like to change the topic. How about we talk about the twenties?"))
-        # add a confirmation button
 
 
-nao = Nao(ip="10.0.0.222")
+nao = Nao(ip="10.0.0.198")
 
 nao.buttons.register_callback(test_func)
