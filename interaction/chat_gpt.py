@@ -1,59 +1,67 @@
+import os
 from sic_framework.services.openai_gpt.gpt import GPT, GPTConf, GPTRequest
 
 class GPT:
-    def __init__(self, openai_key, model="gpt-4o-mini", max_history_length=5):
+    def __init__(self, openai_key, model="gpt-4o-mini", max_history_length=5, prompt_file="data/prompt_start.txt"):
         """
         Initialize the GPT instance with API key and history management.
 
         :param openai_key: API key for OpenAI.
+        :param model: ChatGPT model to use.
         :param max_history_length: Maximum number of exchanges to keep in the history.
+        :param prompt_file: Path to the file containing the system prompt.
         """
         self.gpt = GPT(conf=GPTConf(openai_key=openai_key))
         self.model = model
-        self.history = []  # List to store conversation history
+        self.history = []  # List to store conversation history as {"role": ..., "content": ...}
         self.max_history_length = max_history_length
 
-    def generate_response(self, prompt):
+        # Load the system prompt and add it to the conversation history
+        self._load_system_prompt(prompt_file)
+
+    def _load_system_prompt(self, prompt_file):
+        """
+        Load the system prompt from a file and add it as the first message in the conversation.
+
+        :param prompt_file: Path to the file containing the system prompt.
+        """
+        try:
+            prompt_path = os.path.join(os.path.dirname(__file__), "..", prompt_file)
+            with open(prompt_path, "r") as file:
+                system_prompt = file.read().strip()
+            self.history.append({"role": "system", "content": system_prompt})
+        except FileNotFoundError:
+            print(f"Prompt file '{prompt_file}' not found. Using default system prompt.")
+            self.history.append({"role": "system", "content": "You are a helpful assistant."})
+
+    def generate_response(self, user_input):
         """
         Generate a response from ChatGPT, considering the conversation history.
 
-        :param prompt: The user's input.
+        :param user_input: The user's input.
         :return: The response from ChatGPT.
         """
-        # Construct the full prompt including the history
-        full_prompt = self._construct_prompt(prompt)
+        # Add user input to the conversation history
+        self.history.append({"role": "user", "content": user_input})
+
+        # Trim the conversation history to maintain the maximum length
+        self._trim_history()
 
         # Make the API request
-        reply = self.gpt.request(GPTRequest(full_prompt, model=self.model))
-        
-        # Append the new exchange to the history
-        self._update_history(prompt, reply.response)
-        
-        return reply.response
+        response = self.gpt.request(GPTRequest(messages=self.history, model=self.model))
 
-    def _construct_prompt(self, user_input):
+        # Extract the assistant's reply
+        reply = response.response  # Assuming GPTRequest returns this
+        self.history.append({"role": "assistant", "content": reply})
+
+        return reply
+
+    def _trim_history(self):
         """
-        Construct the prompt by including the conversation history.
-
-        :param user_input: The user's current input.
-        :return: The full prompt including the history and current input.
+        Trim the conversation history to maintain the maximum number of exchanges.
         """
-        # Combine history and current input
-        history_text = "\n".join(self.history)
-        full_prompt = f"{history_text}\nUser: {user_input}\nChatGPT:"
-        return full_prompt
+        max_messages = self.max_history_length * 2  # Each turn has 2 messages: user and assistant
+        if len(self.history) > max_messages:
+            # Preserve the system message while trimming user and assistant exchanges
+            self.history = [self.history[0]] + self.history[-max_messages:]
 
-    def _update_history(self, user_input, response):
-        """
-        Update the conversation history.
-
-        :param user_input: The user's current input.
-        :param response: The response from ChatGPT.
-        """
-        # Add the new exchange to the history
-        self.history.append(f"User: {user_input}")
-        self.history.append(f"ChatGPT: {response}")
-
-        # Trim the history to maintain the maximum length
-        if len(self.history) > self.max_history_length * 2:  # Multiply by 2 (user+ChatGPT for each exchange)
-            self.history = self.history[-self.max_history_length * 2:]
