@@ -37,6 +37,9 @@ def on_image(image_message: CompressedImageMessage):
 def on_faces(message: BoundingBoxesMessage):
     faces_buffer.put(message.bboxes)
 
+def on_faces(message: BoundingBoxesMessage):
+    faces_buffer.put(message.bboxes)
+
 # Configuration for the desktop camera
 camera_conf = DesktopCameraConf(fx=1.0, fy=1.0, flip=1)
 

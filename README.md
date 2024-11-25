@@ -1,1 +1,2 @@
-# Socially-Intelligent-Robotics
+# Socially-Intelligent-Robotics - Group 2
+
