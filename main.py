@@ -1,5 +1,3 @@
-# main.py
-
 import threading
 from sic_framework.devices import Nao
 from sic_framework.devices.desktop import Desktop
