@@ -1,47 +1,39 @@
-import threading
 from sic_framework.devices import Nao
-from sic_framework.devices.desktop import Desktop
-from sic_framework.services.openai_whisper_speech_to_text.whisper_speech_to_text import (
-    GetTranscript,
-    SICWhisper,
-    WhisperConf,
-)
-from sic_framework.services.openai_gpt.gpt import GPT, GPTConf, GPTRequest
-from sic_framework.services.face_detection.face_detection import FaceDetection
-from sic_framework.devices.common_desktop.desktop_camera import DesktopCameraConf
+from perception.camera import Camera
+from perception.face_detection import FaceDetectionService
+from interaction.conversation import Conversation
+from interaction.interruption import Interruption
+from interaction.chat_gpt import ChatGPT
+from interaction.speech_to_text import SpeechToText
+from control.motion import Motion
+from control.leds import LEDControl
+from utils.callbacks import on_faces, on_image
+import os
 
-from config import OPENAI_KEY, NAO_IP, NUM_TURNS, CAMERA_CONF
-from callbacks import on_image, on_faces, touch_stop, imgs_buffer, faces_buffer, interrupted
-from nao_control import set_eye_color
-from conversation import start_conversation
+# Loading OPENAI key and NAO IP
+from dotenv import load_dotenv
+load_dotenv()
+OPENAI_KEY = os.getenv("OPENAI_KEY")
+NAO_IP = os.getenv("NAO_IP")
+if not OPENAI_KEY or not NAO_IP:
+    raise EnvironmentError("Missing required environment variables in the .env file.")
 
-def main():
-    # Initialize devices and services
-    desktop_camera_conf = DesktopCameraConf(**CAMERA_CONF)
-    desktop = Desktop(camera_conf=desktop_camera_conf)
-    face_rec = FaceDetection()
-    whisper_conf = WhisperConf(openai_key=OPENAI_KEY)
-    whisper = SICWhisper(conf=whisper_conf)
-    gpt_conf = GPTConf(openai_key=OPENAI_KEY)
-    gpt = GPT(conf=gpt_conf)
-    nao = Nao(ip=NAO_IP)
+# Initialize components
+nao = Nao(ip=NAO_IP)
+camera = Camera()
+face_rec = FaceDetectionService()
+whisper = SpeechToText(OPENAI_KEY)
+gpt = ChatGPT(OPENAI_KEY)
+motion = Motion(nao)
+led_control = LEDControl(nao)
 
-    # Connect services
-    try:
-        face_rec.connect(desktop.camera)
-        whisper.connect(desktop.mic)
-        print("Services connected successfully.")
-    except Exception as e:
-        print(f"Error connecting services: {e}")
+# Connect devices and services
+face_rec.connect(camera.get_camera())
+camera.register_callback(on_image)
+face_rec.register_callback(on_faces)
 
-    # Register callbacks
-    desktop.camera.register_callback(on_image)
-    face_rec.register_callback(on_faces)
-    nao.buttons.register_callback(lambda event: touch_stop(event, nao))
+# Start the system
+conv = Conversation(nao, whisper, gpt, motion, led_control)
+interrupt = Interruption(nao, conv)
 
-    # Start the conversation
-    interrupted_flag = [interrupted]  # Using list to pass by reference
-    start_conversation(nao, whisper, gpt, NUM_TURNS, interrupted_flag)
-
-if __name__ == "__main__":
-    main()
+conv.start()
