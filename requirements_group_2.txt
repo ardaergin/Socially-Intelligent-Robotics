@@ -3,5 +3,4 @@ whisper
 SpeechRecognition
 nltk
 python-dotenv
-json
 pygame
