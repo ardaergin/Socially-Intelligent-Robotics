@@ -1,5 +1,5 @@
 import random
-from ..utils.sentence_utils import break_into_sentences
+from utils.sentence_utils import break_into_sentences
 
 
 class Interruption:

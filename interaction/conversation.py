@@ -3,7 +3,7 @@ from .speech_to_text import SpeechToText
 from .chat_gpt import GPT
 from .historical_roles import HistoricalRoles
 from .interruption import Interruption
-from ..utils.sentence_utils import break_into_sentences
+from utils.sentence_utils import break_into_sentences
 
 class Conversation:
     def __init__(self, nao, whisper_key, gpt_key, motion, leds):

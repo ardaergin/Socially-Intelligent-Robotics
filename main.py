@@ -3,7 +3,7 @@ from perception.camera import Camera
 from perception.face_detection import FaceDetectionService
 from interaction.conversation import Conversation
 from interaction.interruption import Interruption
-from interaction.chat_gpt import ChatGPT
+from interaction.chat_gpt import GPT
 from interaction.speech_to_text import SpeechToText
 from control.motion import Motion
 from control.leds import LEDControl
@@ -23,7 +23,7 @@ nao = Nao(ip=NAO_IP)
 camera = Camera()
 face_rec = FaceDetectionService()
 whisper = SpeechToText(OPENAI_KEY)
-gpt = ChatGPT(OPENAI_KEY)
+gpt = GPT(OPENAI_KEY)
 motion = Motion(nao)
 led_control = LEDControl(nao)
 
