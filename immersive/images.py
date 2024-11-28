@@ -14,21 +14,23 @@ def display_images_sequentially(images, duration=5, transition_time=1):
         cv2.namedWindow("Historical Image", cv2.WND_PROP_FULLSCREEN)
         cv2.setWindowProperty("Historical Image", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
+        previous_img = None
+
         for idx, image_path in enumerate(images):
             img = cv2.imread(image_path)
             if img is None:
                 print(f"Image not found: {image_path}")
                 continue
 
-            # If not the first image, transition smoothly
-            if idx > 0:
+            # Transition smoothly if there is a previous image
+            if previous_img is not None:
                 fade_transition(previous_img, img, transition_time)
 
             # Display the current image
             cv2.imshow("Historical Image", img)
             cv2.waitKey(duration * 1000)  # Display for `duration` seconds
 
-            # Store the current image as the previous image for the next loop
+            # Store the current image as the previous image
             previous_img = img
 
         cv2.destroyAllWindows()
@@ -51,10 +53,3 @@ def fade_transition(image1, image2, transition_time):
             cv2.waitKey(int(1000 / 30))  # Delay for ~30 FPS
     except Exception as e:
         print(f"Error during transition: {e}")
-
-if __name__ == "__main__":
-    # Path to your test images
-    images = ["./data/images/random.jpg", "./data/images/random_2.jpg"]
-
-    # Display the sequence of images
-    display_images_sequentially(images, duration=5, transition_time=2)
