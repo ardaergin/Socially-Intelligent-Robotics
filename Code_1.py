@@ -194,7 +194,7 @@ while not face_detected:
 
 # Start the conversation loop
 NUM_TURNS = 10
-
+interrupted = False
 i = 0
 while i < NUM_TURNS:
     print("Talk now!")
