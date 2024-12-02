@@ -196,65 +196,6 @@ while not face_detected:
 
 
 
-# Start the conversation loop
-NUM_TURNS = 10
-
-i = 0
-while i < NUM_TURNS:
-    print("Talk now!")
-    try:
-        # Ensure listening only starts after NAO finishes speaking
-        set_eye_color('green')  # Indicate NAO is listening
-        transcript = whisper.request(GetTranscript(timeout=10, phrase_time_limit=30))
-        inp = transcript.transcript
-        print("Transcript:", inp)
-
-        # Change NAO's eye color to blue while talking
-        set_eye_color('blue')
-        # reply = gpt.request(GPTRequest(inp))
-        # response = reply.response
-        reply = converse(inp)
-        print("ChatGPT Response:", reply)
-
-        # Send ChatGPT's response to NAO's TTS and wait until it finishes, playing animations
-        gpt_response_in_sentences = break_into_sentences(reply)
-        
-        for sentence in gpt_response_in_sentences:
-            send_sentence_and_animation_to_nao(nao, sentence)
-            if interrupted:
-                print("Interruption detected. Responding to touch.")
-                # Respond with the touch message
-                nao.tts.request(NaoqiTextToSpeechRequest("Oh, I understand that you are uninterested in this subject, let me switch."))
-                break
-
-        # Only start listening again after speech completes
-        set_eye_color(nao, 'green')
-
-        if interrupted:
-            reply = gpt.request(GPTRequest("Can you tell a story about the roman empire?"))
-            response = reply.response
-            gpt_response_in_sentences = break_into_sentences(response)
-            print("ChatGPT Response:", response)
-            interrupted = False
-
-
-        # Send ChatGPT's response to NAO's TTS and wait until it finishes, playing animations
-        send_sentence_and_animation_to_nao(reply)
-
-        # Only start listening again after speech completes
-        set_eye_color('green')
-    except Exception as e:
-        print(f"An error occurred during the conversation: {e}")
-
-    i += 1
-
-print("Conversation done!")
-nao.motion.request(NaoPostureRequest("Sit", 0.5))
-set_eye_color('off')  # Optionally turn off the LEDs after the conversation
-
-
-
-
 
 
 

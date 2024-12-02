@@ -1,4 +1,4 @@
-import os 
+import os
 import time
 import queue
 import random
@@ -24,9 +24,9 @@ from sic_framework.devices.common_desktop.desktop_camera import DesktopCameraCon
 from sic_framework.devices.common_naoqi.naoqi_leds import NaoFadeRGBRequest
 from sic_framework.devices.common_naoqi.naoqi_motion import NaoqiAnimationRequest, NaoPostureRequest
 
-
 # Environment Variables
 from dotenv import load_dotenv
+
 load_dotenv()
 openai_key = os.getenv("OPENAI_KEY")
 nao_ip = os.getenv("NAO_IP")
@@ -42,12 +42,15 @@ nao.motion.request(NaoPostureRequest("Stand", 0.5))
 imgs_buffer = queue.Queue(maxsize=1)
 faces_buffer = queue.Queue(maxsize=1)
 
+
 # Callback functions for receiving image and face detection data
 def on_image(image_message: CompressedImageMessage):
     imgs_buffer.put(image_message.image)
 
+
 def on_faces(message: BoundingBoxesMessage):
     faces_buffer.put(message.bboxes)
+
 
 # Configuration for the desktop camera
 camera_conf = DesktopCameraConf(fx=1.0, fy=1.0, flip=1)
@@ -60,7 +63,6 @@ whisper = SICWhisper(conf=whisper_conf)
 gpt_conf = GPTConf(openai_key=openai_key, model="gpt-4o-mini")
 gpt = GPT(conf=gpt_conf)
 client = OpenAI(api_key=openai_key)
-
 
 # Connect services
 try:
@@ -83,6 +85,7 @@ def set_eye_color(color):
         nao.leds.request(NaoFadeRGBRequest("FaceLeds", 0, 0, 1, 0))
     elif color == 'off':
         nao.leds.request(NaoFadeRGBRequest("FaceLeds", 0, 0, 0, 0))
+
 
 # Function to play animations while NAO is speaking
 def play_random_animations(stop_event):
@@ -122,16 +125,18 @@ def send_sentence_and_animation_to_nao(sentence):
 
 from nltk.tokenize import sent_tokenize
 import nltk
+
 nltk.download('punkt_tab')
+
 
 def break_into_sentences(text):
     return sent_tokenize(text)
 
 
+conversation = [{"role": "system",
+                 "content": "You are a social robot carrying out an experiment. You will only talk to one user at a time. The scenario is that you are a time traveler that has been to every time period since the era of dinosaurs. Talk with an adventurous tone and use real facts of that time period to tell a story in that time period. Always remain on the topic unless you are asked to change it. Don't talk about sensitive or private information about the user. First ask the user's name and then start off with introducing a random time period followed by telling a story from that time period."}]
 
 
-
-conversation = [{"role": "system", "content": "You are a social robot carrying out an experiment. You will only talk to one user at a time. The scenario is that you are a time traveler that has been to every time period since the era of dinosaurs. Talk with an adventurous tone and use real facts of that time period to tell a story in that time period. Always remain on the topic unless you are asked to change it. Don't talk about sensitive or private information about the user. First ask the user's name and then start off with introducing a random time period followed by telling a story from that time period."}]
 def converse(user_input):
     conversation.append({"role": "user", "content": user_input})
     response = client.chat.completions.create(
@@ -142,8 +147,6 @@ def converse(user_input):
     conversation.append({"role": "assistant", "content": reply})
 
     return reply
-
-
 
 
 def touch_stop(event):
@@ -163,13 +166,9 @@ def touch_stop(event):
         # nao.tts.stop()
         # Set the interruption flag
         interrupted = True
+
+
 nao.buttons.register_callback(touch_stop)
-
-
-
-
-
-
 
 # Main loop to detect faces and initiate conversation
 print("Waiting for a face to start the conversation...")
@@ -184,17 +183,14 @@ while not face_detected:
         if faces:
             print("Face detected! Starting conversation...")
             face_detected = True
-            welcome_message = ("Hello! I am a social robot, and today, we will time-travel together to explore the fascinating history of Amsterdam. Get ready for an immersive experience!")
+            welcome_message = (
+                "Hello! I am a social robot, and today, we will time-travel together to explore the fascinating history of Amsterdam. Get ready for an immersive experience!")
             send_sentence_and_animation_to_nao(welcome_message)
             set_eye_color('green')  # NAO eyes turn green to indicate listening
     except queue.Empty:
         print("No face detected yet, still waiting...")
     except Exception as e:
         print(f"Error during face detection: {e}")
-
-
-
-
 
 # Start the conversation loop
 NUM_TURNS = 10
@@ -218,13 +214,14 @@ while i < NUM_TURNS:
 
         # Send ChatGPT's response to NAO's TTS and wait until it finishes, playing animations
         gpt_response_in_sentences = break_into_sentences(reply)
-        
+
         for sentence in gpt_response_in_sentences:
-            send_sentence_and_animation_to_nao(nao, sentence)
+            send_sentence_and_animation_to_nao(sentence)
             if interrupted:
                 print("Interruption detected. Responding to touch.")
                 # Respond with the touch message
-                nao.tts.request(NaoqiTextToSpeechRequest("Oh, I understand that you are uninterested in this subject, let me switch."))
+                nao.tts.request(NaoqiTextToSpeechRequest(
+                    "Oh, I understand that you are uninterested in this subject, let me switch."))
                 break
 
         # Only start listening again after speech completes
@@ -236,7 +233,6 @@ while i < NUM_TURNS:
             gpt_response_in_sentences = break_into_sentences(response)
             print("ChatGPT Response:", response)
             interrupted = False
-
 
         # Send ChatGPT's response to NAO's TTS and wait until it finishes, playing animations
         send_sentence_and_animation_to_nao(reply)
