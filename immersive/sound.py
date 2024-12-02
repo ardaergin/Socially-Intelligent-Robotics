@@ -1,6 +1,7 @@
 import pygame
 import time
 
+
 def play_audio_loop(audio_path):
     """
     Play an audio file in a loop using Pygame.
@@ -17,6 +18,7 @@ def play_audio_loop(audio_path):
         print(f"Error playing audio: {e}")
     finally:
         pygame.mixer.quit()
+
 
 def stop_audio():
     """

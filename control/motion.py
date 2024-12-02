@@ -20,4 +20,4 @@ class Motion:
             animation_number = random.randint(1, 11)
             animation_path = f"animations/Stand/Gestures/Explain_{animation_number}"
             self.play_animation(animation_path)
-            time.sleep(random.uniform(2, 4))  # Pause before playing another animation
+            time.sleep(random.uniform(1, 2))  # Pause before playing another animation
