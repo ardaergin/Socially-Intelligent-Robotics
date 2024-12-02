@@ -46,6 +46,11 @@ class Conversation:
                 transcript = self.stt.transcribe().transcript
                 print(f"User: {transcript}")
 
+                # Detect Short Response
+                if len(transcript.split()) < 5:
+                    print("Detected User gave a short response...")
+                    self._handle_short_response()
+
                 self.leds.set_eye_color("blue")
                 response, self.history = generate_response(self.gpt, self.history, transcript)
                 send_text_to_nao(self.nao, self.motion, response)
@@ -96,3 +101,16 @@ class Conversation:
     def _handle_touch_interrupt(self, interrupted):
         if interrupted:
             self.interrupted = True
+
+    def _handle_short_response(self):
+        """When short response detected, switch topic"""
+        print("Handling short response..")
+
+        # Nao Response
+        interrupt_response = "Anyway, let's talk about another era."  # Implicit Switch
+        # interrupt_response = ("Oh, I have detected that you are uninterested in this subject, "
+        #                       "let's talk about something else.")      # Explicit Switch
+        self.tts.send_text_and_animation_to_nao(interrupt_response)
+
+        # Switch to a new role
+        self.current_role = self.roles.get_random_role()
