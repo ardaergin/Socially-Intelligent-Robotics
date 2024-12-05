@@ -210,6 +210,11 @@ while not face_detected:
 NUM_TURNS = 10
 interrupted = False
 i = 0
+
+from .HistoricalRoles import HistoricalRoles
+historical_roles = HistoricalRoles()
+
+
 while i < NUM_TURNS:
     try:
         if not interrupted:
@@ -226,7 +231,9 @@ while i < NUM_TURNS:
             reply = converse(inp)
             print("ChatGPT Response:", reply)
         else:
-            reply = system_input("Can you tell a story about the roman empire?")
+            random_role = historical_roles.get_random_role()
+            prompt_for_random_role = historical_roles.format_as_prompt(random_role)
+            reply = system_input(prompt_for_random_role)
             print("ChatGPT Response:", reply)
             interrupted = False
 
