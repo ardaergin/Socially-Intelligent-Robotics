@@ -214,12 +214,15 @@ historical_roles = HistoricalRoles()
 
 
 while i < NUM_TURNS:
+    print("Turn number:", i)
 
     nao.buttons.register_callback(touch_stop)
 
     if i == 0:
         specific_role = historical_roles.get_role_for_era("1500s")
         prompt_for_role = historical_roles.format_as_prompt(specific_role)
+        print("prompt_for_role: \n")
+        print(prompt_for_role)
         
         reply = system_input(prompt_for_random_role)
         print("ChatGPT Response:", reply)
