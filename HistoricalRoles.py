@@ -82,7 +82,7 @@ class HistoricalRoles:
             f"{' '.join(role_data['interactive_questions'])}\n\n"
             f"Dialogue Style:\n"
             f"{' '.join(role_data['dialogue_style'])}\n\n"
-            f"Stay in character and engage the user interactively."
+            f"Stay in character and engage the user interactively. After talking for four or five of sentences, ask an interactive question."
         )
 
     def get_current_role(self):

@@ -224,7 +224,7 @@ while i < NUM_TURNS:
         print("prompt_for_role: \n")
         print(prompt_for_role)
         
-        reply = system_input(prompt_for_random_role)
+        reply = system_input(prompt_for_role)
         print("ChatGPT Response:", reply)
 
         gpt_response_in_sentences = break_into_sentences(reply)
