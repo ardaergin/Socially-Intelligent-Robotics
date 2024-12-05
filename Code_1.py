@@ -151,6 +151,18 @@ def converse(user_input):
     return reply
 
 
+def system_input(user_input):
+    conversation.append({"role": "system", "content": user_input})
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=conversation,
+    )
+    reply = response.choices[0].message.content
+    conversation.append({"role": "assistant", "content": reply})
+
+    return reply
+
+
 def touch_stop(event):
     global interrupted
     sensor = event.value
@@ -199,20 +211,24 @@ NUM_TURNS = 10
 interrupted = False
 i = 0
 while i < NUM_TURNS:
-    print("Talk now!")
     try:
-        # Ensure listening only starts after NAO finishes speaking
-        set_eye_color('green')  # Indicate NAO is listening
-        transcript = whisper.request(GetTranscript(timeout=10, phrase_time_limit=30))
-        inp = transcript.transcript
-        print("Transcript:", inp)
-
-        # Change NAO's eye color to blue while talking
-        set_eye_color('blue')
-        # reply = gpt.request(GPTRequest(inp))
-        # response = reply.response
-        reply = converse(inp)
-        print("ChatGPT Response:", reply)
+        if not interrupted:
+            print("Talk now!")
+            # Ensure listening only starts after NAO finishes speaking
+            set_eye_color('green')  # Indicate NAO is listening
+            transcript = whisper.request(GetTranscript(timeout=10, phrase_time_limit=30))
+            inp = transcript.transcript
+            print("Transcript:", inp)
+            # Change NAO's eye color to blue while talking
+            set_eye_color('blue')
+            # reply = gpt.request(GPTRequest(inp))
+            # response = reply.response
+            reply = converse(inp)
+            print("ChatGPT Response:", reply)
+        else:
+            reply = system_input("Can you tell a story about the roman empire?")
+            print("ChatGPT Response:", reply)
+            interrupted = False
 
         # Send ChatGPT's response to NAO's TTS and wait until it finishes, playing animations
         gpt_response_in_sentences = break_into_sentences(reply)
@@ -225,19 +241,6 @@ while i < NUM_TURNS:
                 nao.tts.request(NaoqiTextToSpeechRequest(
                     "Oh, I understand that you are uninterested in this subject, let me switch."))
                 break
-
-        # Only start listening again after speech completes
-        set_eye_color('green')
-
-        if interrupted:
-            reply = gpt.request(GPTRequest("Can you tell a story about the roman empire?"))
-            response = reply.response
-            gpt_response_in_sentences = break_into_sentences(response)
-            print("ChatGPT Response:", response)
-            interrupted = False
-
-        # Send ChatGPT's response to NAO's TTS and wait until it finishes, playing animations
-        send_sentence_and_animation_to_nao(reply)
 
         # Only start listening again after speech completes
         set_eye_color('green')
