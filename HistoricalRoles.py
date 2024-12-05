@@ -9,20 +9,18 @@ class HistoricalRoles:
     def __init__(self):
         """
         Initialize the HistoricalRoles class.
-
-        :param roles_file: Path to the JSON file containing historical roles.
         """
         self.roles = self._load_roles()
+        self.previous_eras = []  # List to store previously chosen eras
+        self.current_role = None  # Store the current role
 
     def _load_roles(self):
         """
         Load historical roles from a JSON file.
 
-        :param roles_file: Path to the JSON file containing historical roles.
         :return: Dictionary of roles by era.
         """
         roles_path = os.path.join(os.path.dirname(__file__), "data", "amsterdam_eras.json")
-        # roles_path = "./data/amsterdam_eras.json"
         try:
             with open(roles_path, "r") as file:
                 return json.load(file)
@@ -32,14 +30,39 @@ class HistoricalRoles:
 
     def get_random_role(self):
         """
-        Get a random historical role from the available eras.
+        Get a random historical role from the available eras, excluding the ones already chosen.
+        Updates the current_role with the chosen role.
 
         :return: A dictionary containing role, era description, interactive questions, and dialogue style.
         """
         if not self.roles:
             return None
-        era = random.choice(list(self.roles.keys()))
-        return self.roles[era]
+        remaining_eras = list(set(self.roles.keys()) - set(self.previous_eras))
+        
+        if not remaining_eras:
+            print("All eras have been chosen.")
+            return None
+        
+        era = random.choice(remaining_eras)
+        self.previous_eras.append(era)  # Add the chosen era to the previous_eras list
+        self.current_role = self.roles[era]  # Update the current_role
+        return self.current_role
+
+    def get_role_for_era(self, era):
+        """
+        Get the historical role for a specific era and update the previous_eras list.
+        Updates the current_role with the chosen role.
+
+        :param era: The era for which the role should be retrieved (e.g., "1500s", "1600s").
+        :return: A dictionary containing role, era description, interactive questions, and dialogue style, or None if the era is not found.
+        """
+        if era in self.roles:
+            self.previous_eras.append(era)  # Add the chosen era to the previous_eras list
+            self.current_role = self.roles[era]  # Update the current_role
+            return self.current_role
+        else:
+            print(f"No role found for the era: {era}")
+            return None
 
     def format_as_prompt(self, role_data):
         """
@@ -61,6 +84,15 @@ class HistoricalRoles:
             f"{' '.join(role_data['dialogue_style'])}\n\n"
             f"Stay in character and engage the user interactively."
         )
+
+    def get_current_role(self):
+        """
+        Returns the current role.
+
+        :return: The current role data.
+        """
+        return self.current_role
+
 
 # if __name__ == "__main__":
 #     historical_roles = HistoricalRoles()

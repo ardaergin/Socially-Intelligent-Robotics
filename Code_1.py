@@ -214,41 +214,70 @@ historical_roles = HistoricalRoles()
 
 
 while i < NUM_TURNS:
+
     nao.buttons.register_callback(touch_stop)
-    if not interrupted:
-        print("Talk now!")
-        # Ensure listening only starts after NAO finishes speaking
-        set_eye_color('green')  # Indicate NAO is listening
-        transcript = whisper.request(GetTranscript(timeout=10, phrase_time_limit=30))
-        inp = transcript.transcript
-        print("Transcript:", inp)
-        # Change NAO's eye color to blue while talking
-        set_eye_color('blue')
-        # reply = gpt.request(GPTRequest(inp))
-        # response = reply.response
-        reply = converse(inp)
-        print("ChatGPT Response:", reply)
-    else:
-        random_role = historical_roles.get_random_role()
-        prompt_for_random_role = historical_roles.format_as_prompt(random_role)
+
+    if i == 0:
+        specific_role = historical_roles.get_role_for_era("1500s")
+        prompt_for_role = historical_roles.format_as_prompt(specific_role)
+        
         reply = system_input(prompt_for_random_role)
         print("ChatGPT Response:", reply)
-        interrupted = False
 
-    # Send ChatGPT's response to NAO's TTS and wait until it finishes, playing animations
-    gpt_response_in_sentences = break_into_sentences(reply)
+        gpt_response_in_sentences = break_into_sentences(reply)
+        for sentence in gpt_response_in_sentences:
+            send_sentence_and_animation_to_nao(sentence)
+            if interrupted:
+                print("Interruption detected. Responding to touch.")
+                # Respond with the touch message
+                nao.tts.request(NaoqiTextToSpeechRequest(
+                    "Oh, I understand that you are uninterested in this subject, let me switch."))
+                break
+    
+    else: 
+        if not interrupted:
+            
+            reply = converse("Carry on the conversation.")
+            print("ChatGPT Response:", reply)
 
-    for sentence in gpt_response_in_sentences:
-        send_sentence_and_animation_to_nao(sentence)
-        if interrupted:
-            print("Interruption detected. Responding to touch.")
-            # Respond with the touch message
-            nao.tts.request(NaoqiTextToSpeechRequest(
-                "Oh, I understand that you are uninterested in this subject, let me switch."))
-            break
+            gpt_response_in_sentences = break_into_sentences(reply)
+            for sentence in gpt_response_in_sentences:
+                send_sentence_and_animation_to_nao(sentence)
+                if interrupted:
+                    print("Interruption detected. Responding to touch.")
+                    # Respond with the touch message
+                    nao.tts.request(NaoqiTextToSpeechRequest(
+                        "Oh, I understand that you are uninterested in this subject, let me switch."))
+                    break
+            
+            set_eye_color('green')  # Indicate NAO is listening
+            transcript = whisper.request(GetTranscript(timeout=10, phrase_time_limit=30))
+            inp = transcript.transcript
+            print("Transcript:", inp)
+        
+        else: 
+            random_role = historical_roles.get_random_role()
+            prompt_for_random_role = historical_roles.format_as_prompt(random_role)
+            reply = system_input(prompt_for_random_role)
+            interrupted = False
+            print("ChatGPT Response:", reply)
+            gpt_response_in_sentences = break_into_sentences(reply)
+            for sentence in gpt_response_in_sentences:
+                send_sentence_and_animation_to_nao(sentence)
+                if interrupted:
+                    print("Interruption detected. Responding to touch.")
+                    # Respond with the touch message
+                    nao.tts.request(NaoqiTextToSpeechRequest(
+                        "Oh, I understand that you are uninterested in this subject, let me switch."))
+                    break
+
+            set_eye_color('green')  # Indicate NAO is listening
+            transcript = whisper.request(GetTranscript(timeout=10, phrase_time_limit=30))
+            inp = transcript.transcript
+            print("Transcript:", inp)
 
     # Only start listening again after speech completes
-    set_eye_color('green')
+    set_eye_color('blue')
 
     i += 1
 
