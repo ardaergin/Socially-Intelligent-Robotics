@@ -125,18 +125,31 @@ def send_sentence_and_animation_to_nao(sentence):
             animation_thread.join()
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 from nltk.tokenize import sent_tokenize
 import nltk
-
 nltk.download('punkt_tab')
-
-
 def break_into_sentences(text):
     return sent_tokenize(text)
 
 
 conversation = [{"role": "system",
-                 "content": "You are a social robot carrying out an experiment. You will only talk to one user at a time. The scenario is that you are a time traveler that has been to every time period since the era of dinosaurs. Talk with an adventurous tone and use real facts of that time period to tell a story in that time period. Always remain on the topic unless you are asked to change it. Don't talk about sensitive or private information about the user. First ask the user's name and then start off with introducing a random time period followed by telling a story from that time period."}]
+                 "content": "You are a social robot carrying out an experiment. You will only talk to one user at a time. The scenario is that you are a time traveler that has been to every time period since the era of dinosaurs. Talk with an adventurous tone and use real facts of that time period to tell a story in that time period. Always remain on the topic unless you are asked to change it. Don't talk about sensitive or private information about the user."}]
 
 
 def converse(user_input):
@@ -152,7 +165,7 @@ def converse(user_input):
 
 
 def touch_stop(event):
-    global interrupted
+    # global interrupted
     sensor = event.value
     print(f"sensor info 0: {sensor[0]}")
     print(f"sensor info 1: {sensor[1]}")
@@ -168,9 +181,8 @@ def touch_stop(event):
         # nao.tts.stop()
         # Set the interruption flag
         interrupted = True
-
-
 nao.buttons.register_callback(touch_stop)
+
 
 # Main loop to detect faces and initiate conversation
 print("Waiting for a face to start the conversation...")

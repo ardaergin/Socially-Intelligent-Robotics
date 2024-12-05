@@ -59,3 +59,9 @@ class HistoricalRoles:
             f"{' '.join(role_data['dialogue_style'])}\n\n"
             f"Stay in character and engage the user interactively."
         )
+
+# if __name__ == "__main__":
+#     historical_roles = HistoricalRoles()
+#     random_role = historical_roles.get_random_role()
+#     prompt_for_random_role = historical_roles.format_as_prompt(random_role)
+#     print(prompt_for_random_role)
