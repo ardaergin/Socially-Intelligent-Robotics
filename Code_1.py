@@ -236,7 +236,8 @@ while i < NUM_TURNS:
                 nao.tts.request(NaoqiTextToSpeechRequest(
                     "Oh, I understand that you are uninterested in this subject, let me switch."))
                 break
-        
+
+        print("Talk now:")
         set_eye_color('green')  # Indicate NAO is listening
         transcript = whisper.request(GetTranscript(timeout=10, phrase_time_limit=30))
         inp = transcript.transcript
@@ -257,7 +258,8 @@ while i < NUM_TURNS:
                     nao.tts.request(NaoqiTextToSpeechRequest(
                         "Oh, I understand that you are uninterested in this subject, let me switch."))
                     break
-            
+
+            print("Talk now:")
             set_eye_color('green')  # Indicate NAO is listening
             transcript = whisper.request(GetTranscript(timeout=10, phrase_time_limit=30))
             inp = transcript.transcript
