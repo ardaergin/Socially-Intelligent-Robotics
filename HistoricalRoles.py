@@ -78,11 +78,11 @@ class HistoricalRoles:
             f"You are role-playing as:\n"
             f"{role_data['role']}\n\n"
             f"Era Description:\n{role_data['era_description']}\n\n"
-            f"Interactive Questions to guide the conversation:\n"
-            f"{' '.join(role_data['interactive_questions'])}\n\n"
             f"Dialogue Style:\n"
             f"{' '.join(role_data['dialogue_style'])}\n\n"
-            f"Stay in character and engage the user interactively. After talking for four or five of sentences, ask an interactive question."
+            f"Stay in character and engage the user interactively. After talking for aboute three sentences, then ask an interactive question."
+            f"Interactive Questions to guide the conversation:\n"
+            f"{' '.join(role_data['interactive_questions'])}\n\n"
         )
 
     def get_current_role(self):
