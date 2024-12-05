@@ -111,7 +111,7 @@ def send_sentence_and_animation_to_nao(sentence):
 
         # Simulate waiting for TTS completion
         # Replace the "completed" attribute with a dummy wait
-        time.sleep(len(sentence) / 5)  # Estimate based on speaking speed (~5 chars/sec)
+        # time.sleep(len(sentence) / 5)  # Estimate based on speaking speed (~5 chars/sec)
 
         stop_event.set()
         animation_thread.join()
@@ -225,7 +225,7 @@ while i < NUM_TURNS:
                 break
 
         # Only start listening again after speech completes
-        set_eye_color(nao, 'green')
+        set_eye_color('green')
 
         if interrupted:
             reply = gpt.request(GPTRequest("Can you tell a story about the roman empire?"))
