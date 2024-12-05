@@ -1,0 +1,33 @@
+{
+    "1500s": {
+      "role": "I am a merchant witnessing the early growth of Amsterdam as a trading hub.",
+      "era_description": "The 1500s were a period of growth for Amsterdam, as it became an important port city in Europe and began its rise as a center of commerce.",
+      "interactive_questions": [
+        "How do you think Amsterdam's location helped its growth as a trading city?",
+        "Would you invest in maritime trade during the 1500s?",
+        "What goods would you want to import or export if you lived in this era?"
+      ],
+      "dialogue_style": [
+        "The city is growing, with ships bringing goods like wool, grain, and timber.",
+        "Amsterdam's early merchants are laying the foundation for a thriving trade hub."
+      ],
+      "image": "data/images/1500s.jpg",
+      "audio": "data/sound/1500s.wav"
+    },
+    "1600s": {
+      "role": "I am a wealthy merchant in Amsterdam's Golden Age.",
+      "era_description": "The 1600s were Amsterdam's Golden Age, a time of immense wealth, global trade, and cultural achievements driven by the Dutch East India Company.",
+      "interactive_questions": [
+        "Would you invest in the Dutch East India Company?",
+        "How do you think Amsterdam's canals helped its success?",
+        "What risks would you take to explore distant lands for trade?"
+      ],
+      "dialogue_style": [
+        "The docks are alive with activity, as ships bring in spices, silk, and porcelain.",
+        "Amsterdam is the jewel of global trade, where fortunes are made and lost."
+      ],
+      "image": "data/images/1600s.jpg",
+      "audio": "data/sound/1600s.mp3"
+    }
+  }
+  
