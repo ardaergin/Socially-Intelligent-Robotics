@@ -1,4 +1,4 @@
-import os 
+import os
 import time
 import queue
 import random
@@ -24,9 +24,9 @@ from sic_framework.devices.common_desktop.desktop_camera import DesktopCameraCon
 from sic_framework.devices.common_naoqi.naoqi_leds import NaoFadeRGBRequest
 from sic_framework.devices.common_naoqi.naoqi_motion import NaoqiAnimationRequest, NaoPostureRequest
 
-
 # Environment Variables
 from dotenv import load_dotenv
+
 load_dotenv()
 openai_key = os.getenv("OPENAI_KEY")
 nao_ip = os.getenv("NAO_IP")
@@ -42,12 +42,15 @@ nao.motion.request(NaoPostureRequest("Stand", 0.5))
 imgs_buffer = queue.Queue(maxsize=1)
 faces_buffer = queue.Queue(maxsize=1)
 
+
 # Callback functions for receiving image and face detection data
 def on_image(image_message: CompressedImageMessage):
     imgs_buffer.put(image_message.image)
 
+
 def on_faces(message: BoundingBoxesMessage):
     faces_buffer.put(message.bboxes)
+
 
 # Configuration for the desktop camera
 camera_conf = DesktopCameraConf(fx=1.0, fy=1.0, flip=1)
@@ -60,7 +63,6 @@ whisper = SICWhisper(conf=whisper_conf)
 gpt_conf = GPTConf(openai_key=openai_key, model="gpt-4o-mini")
 gpt = GPT(conf=gpt_conf)
 client = OpenAI(api_key=openai_key)
-
 
 # Connect services
 try:
@@ -83,6 +85,7 @@ def set_eye_color(color):
         nao.leds.request(NaoFadeRGBRequest("FaceLeds", 0, 0, 1, 0))
     elif color == 'off':
         nao.leds.request(NaoFadeRGBRequest("FaceLeds", 0, 0, 0, 0))
+
 
 # Function to play animations while NAO is speaking
 def play_random_animations(stop_event):
@@ -108,7 +111,7 @@ def send_sentence_and_animation_to_nao(sentence):
 
         # Simulate waiting for TTS completion
         # Replace the "completed" attribute with a dummy wait
-        time.sleep(len(sentence) / 5)  # Estimate based on speaking speed (~5 chars/sec)
+        # time.sleep(len(sentence) / 5)  # Estimate based on speaking speed (~5 chars/sec)
 
         stop_event.set()
         animation_thread.join()
@@ -122,16 +125,18 @@ def send_sentence_and_animation_to_nao(sentence):
 
 from nltk.tokenize import sent_tokenize
 import nltk
+
 nltk.download('punkt_tab')
+
 
 def break_into_sentences(text):
     return sent_tokenize(text)
 
 
+conversation = [{"role": "system",
+                 "content": "You are a social robot carrying out an experiment. You will only talk to one user at a time. The scenario is that you are a time traveler that has been to every time period since the era of dinosaurs. Talk with an adventurous tone and use real facts of that time period to tell a story in that time period. Always remain on the topic unless you are asked to change it. Don't talk about sensitive or private information about the user. First ask the user's name and then start off with introducing a random time period followed by telling a story from that time period."}]
 
 
-
-conversation = [{"role": "system", "content": "You are a social robot carrying out an experiment. You will only talk to one user at a time. The scenario is that you are a time traveler that has been to every time period since the era of dinosaurs. Talk with an adventurous tone and use real facts of that time period to tell a story in that time period. Always remain on the topic unless you are asked to change it. Don't talk about sensitive or private information about the user. First ask the user's name and then start off with introducing a random time period followed by telling a story from that time period."}]
 def converse(user_input):
     conversation.append({"role": "user", "content": user_input})
     response = client.chat.completions.create(
@@ -142,8 +147,6 @@ def converse(user_input):
     conversation.append({"role": "assistant", "content": reply})
 
     return reply
-
-
 
 
 def touch_stop(event):
@@ -163,91 +166,39 @@ def touch_stop(event):
         # nao.tts.stop()
         # Set the interruption flag
         interrupted = True
+
+
 nao.buttons.register_callback(touch_stop)
-
-
-
-
-
-
-
-# Main loop to detect faces and initiate conversation
-print("Waiting for a face to start the conversation...")
-
-face_detected = False
-
-while not face_detected:
-    try:
-        img = imgs_buffer.get(timeout=5)
-        faces = faces_buffer.get(timeout=5)
-
-        if faces:
-            print("Face detected! Starting conversation...")
-            face_detected = True
-            welcome_message = ("Hello! I am a social robot, and today, we will time-travel together to explore the fascinating history of Amsterdam. Get ready for an immersive experience!")
-            send_sentence_and_animation_to_nao(welcome_message)
-            set_eye_color('green')  # NAO eyes turn green to indicate listening
-    except queue.Empty:
-        print("No face detected yet, still waiting...")
-    except Exception as e:
-        print(f"Error during face detection: {e}")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 # historical_roles.py
 import os
 import json
 import random
 
+
 class HistoricalRoles:
-    def __init__(self, roles_file="data/amsterdam_eras.json"):
+    def __init__(self):
         """
         Initialize the HistoricalRoles class.
 
         :param roles_file: Path to the JSON file containing historical roles.
         """
-        self.roles = self._load_roles(roles_file)
+        self.roles = self._load_roles("data/amsterdam_eras.json")
 
-    def _load_roles(self, roles_file):
+    def _load_roles(self):
         """
         Load historical roles from a JSON file.
 
         :param roles_file: Path to the JSON file containing historical roles.
         :return: Dictionary of roles by era.
         """
-        roles_path = os.path.join(os.path.dirname(__file__), "..", roles_file)
+        roles_path = os.path.join(os.path.dirname(__file__), "data", "amsterdam_eras.json")
+        # roles_path = "./data/amsterdam_eras.json"
         try:
             with open(roles_path, "r") as file:
                 return json.load(file)
         except FileNotFoundError:
-            print(f"Roles file '{roles_file}' not found.")
+            print(f"Roles file {roles_path} not found.")
             return {}
 
     def get_random_role(self):
@@ -285,7 +236,8 @@ class HistoricalRoles:
 
 
 
-# Main conversation manager class
+
+
 # Main conversation manager class
 class ConversationManager:
     def __init__(self, nao, whisper, gpt_client, historical_roles):
@@ -296,7 +248,7 @@ class ConversationManager:
         self.interrupted = False
         self.current_role = None
         self.conversation = [
-            {"role": "system", 
+            {"role": "system",
              "content": "You are a social robot carrying out an experiment. You will only talk to one user at a time. "
                         "The scenario is that you are a time traveler that has been to every time period since the era of dinosaurs. "
                         "Talk with an adventurous tone and use real facts of that time period to tell a story in that time period. "
@@ -336,7 +288,8 @@ class ConversationManager:
         # Check if the last 3 responses are all short
         if all(len(response.split()) < 5 for response in self.user_responses):
             print("Detected multiple short responses. Switching topic.")
-            self.nao.tts.request(NaoqiTextToSpeechRequest("I noticed several short responses. Let’s switch to another story!"))
+            self.nao.tts.request(
+                NaoqiTextToSpeechRequest("I noticed several short responses. Let’s switch to another story!"))
             self.current_role = self.historical_roles.get_random_role()
             intro_message = self.historical_roles.format_as_prompt(self.current_role)
             self.send_to_nao(intro_message)
@@ -354,6 +307,7 @@ class ConversationManager:
         """Main interaction loop."""
         for _ in range(num_turns):
             try:
+                print("Talk now!")
                 set_eye_color('green')  # Indicate NAO is listening
                 transcript = self.whisper.request(GetTranscript(timeout=10, phrase_time_limit=30))
                 user_input = transcript.transcript
@@ -377,6 +331,9 @@ class ConversationManager:
             except Exception as e:
                 print(f"Error during interaction: {e}")
 
+
+
+
 # Initialize the conversation manager
 historical_roles = HistoricalRoles()
 conversation_manager = ConversationManager(nao, whisper, client, historical_roles)
@@ -393,7 +350,8 @@ while not face_detected:
         if faces:
             print("Face detected! Starting conversation...")
             face_detected = True
-            welcome_message = ("Hello! I am a social robot, and today, we will time-travel together to explore the fascinating history of Amsterdam. Get ready for an immersive experience!")
+            welcome_message = (
+                "Hello! I am a social robot, and today, we will time-travel together to explore the fascinating history of Amsterdam. Get ready for an immersive experience! What's your name?")
             send_sentence_and_animation_to_nao(welcome_message)
             conversation_manager.initialize_conversation()
             conversation_manager.interact(num_turns=10)
