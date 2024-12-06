@@ -99,14 +99,14 @@ def get_gpt_response(text_input, role="user"):
     return reply
 
 
-def handle_gpt_response(reply):
-    global interrupted
-    sentences = break_into_sentences(reply)
-    set_eye_color('blue')
-    for sentence in sentences:
-        send_sentence_and_animation_to_nao(sentence)
-        if interrupted:
-            break
+# def handle_gpt_response(reply):
+#     global interrupted
+#     sentences = break_into_sentences(reply)
+#     set_eye_color('blue')
+#     for sentence in sentences:
+#         send_sentence_and_animation_to_nao(sentence)
+#         if interrupted:
+#             break
 
 
 def touch_stop(event):
@@ -169,21 +169,27 @@ for turn_index in range(NUM_TURNS):
 
     # introduce yourself
     reply = get_gpt_response(INTRODUCTION_PROMPT, "user")
-    handle_gpt_response(reply)
+    send_sentence_and_animation_to_nao(reply)
 
     # talk loop
     while not interrupted:
         # robot talk code
         reply = get_gpt_response(CONTINUE_CONVERSATION_PROMPT)
-        handle_gpt_response(reply)
-
+        sentences = break_into_sentences(reply)
+        set_eye_color('blue')
+        for sentence in sentences:
+            send_sentence_and_animation_to_nao(sentence)
+            if interrupted:
+                break
+        if interrupted:
+            break
         # always end by asking a question and then get response from user
         print("You can talk now:")
         set_eye_color('green')
         transcript = whisper.request(GetTranscript(timeout=10, phrase_time_limit=30))
-        inp = transcript.transcript
-        add_context_to_conversation()
-        if verbose_output: print("Transcript:", inp)
+        user_input = transcript.transcript
+        add_context_to_conversation(user_input, "user")
+        if verbose_output: print("Transcript:", user_input)
     interrupted = False
 
 print("Conversation done!")
