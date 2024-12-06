@@ -80,8 +80,9 @@ class HistoricalRoles:
             f"Era Description:\n{role_data['era_description']}\n\n"
             f"Dialogue Style:\n"
             f"{' '.join(role_data['dialogue_style'])}\n\n"
-            f"Stay in character and engage the user interactively. After talking for aboute three sentences, then ask an interactive question."
-            f"Interactive Questions to guide the conversation:\n"
+            f"Stay in character and engage the user interactively.\""
+            f"After talking for about three sentences, then ask an interactive question."
+            f"Examples of interactive Questions to guide the conversation:\n"
             f"{' '.join(role_data['interactive_questions'])}\n\n"
         )
 

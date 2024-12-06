@@ -84,6 +84,10 @@ def break_into_sentences(text):
     return sent_tokenize(text)
 
 
+def add_context_to_conversation(content, role):
+    conversation.append({"role": role, "content": content})
+
+
 def get_gpt_response(text_input, role="user"):
     conversation.append({"role": "user", "content": text_input})
     response = client.chat.completions.create(
@@ -98,6 +102,7 @@ def get_gpt_response(text_input, role="user"):
 def handle_gpt_response(reply):
     global interrupted
     sentences = break_into_sentences(reply)
+    set_eye_color('blue')
     for sentence in sentences:
         send_sentence_and_animation_to_nao(sentence)
         if interrupted:
@@ -112,7 +117,8 @@ def touch_stop(event):
 
     if touch_detection:
         if verbose_output: print("Touch detected! Stopping current speech and setting interruption flag.")
-        nao.tts.request(NaoqiTextToSpeechRequest("Oh, I understand. Let me switch to a different time period in Amsterdam."))
+        nao.tts.request(
+            NaoqiTextToSpeechRequest("Oh, I understand. Let me switch to a different time period in Amsterdam."))
         interrupted = True
 
     #####################
@@ -125,115 +131,59 @@ historical_roles = HistoricalRoles()
 NUM_TURNS = 10
 interrupted = False
 i = 0
+
 # with starting prompt
 CONVERSATION_START_PROMPT = {
     "role": "system",
     "content": (
         "You are a social robot carrying out an experiment. You will only talk to one user at a time. "
-        "The scenario is that you are a time traveler who has visited different periods of Amsterdam. "
+        "The scenario is that you are a time traveler who has visited different time periods of Amsterdam."
         "You will receive different roles, act appropriately"
         "Talk with an adventurous tone and use real facts of that time period to tell a story. "
         "Always remain on topic unless the user requests to change the topic."
         " Avoid sensitive or private information. Ask engaging questions to guide the conversation."
     ),
 }
-conversation = [CONVERSATION_START_PROMPT]
+INTRODUCTION_PROMPT = (
+    "Introduce yourself and from which time period you are from in 1 or 2 sentences."
+)
+CONTINUE_CONVERSATION_PROMPT = (
+    "Continue the conversation in the respective role."
+    "After talking for about three sentences ask an interactive question."
+)
 
 for turn_index in range(NUM_TURNS):
     if verbose_output: print(f"Turn number: {turn_index + 1}")
+
+    # reset conversation
+    conversation = [CONVERSATION_START_PROMPT]
 
     # register button interrupt callback
     nao.buttons.register_callback(touch_stop)
 
     # get random role
     random_role = historical_roles.get_random_role()
-    prompt_for_random_role = historical_roles.format_as_prompt(random_role)
+    role_prompt = historical_roles.format_as_prompt(random_role)
+    add_context_to_conversation(role_prompt, "system")
+
+    # introduce yourself
+    reply = get_gpt_response(INTRODUCTION_PROMPT, "user")
+    handle_gpt_response(reply)
 
     # talk loop
     while not interrupted:
-        pass
+        # robot talk code
+        reply = get_gpt_response(CONTINUE_CONVERSATION_PROMPT)
+        handle_gpt_response(reply)
 
-        # always end by asking a question:
+        # always end by asking a question and then get response from user
         print("You can talk now:")
-        set_eye_color('green')  # Indicate NAO is listening
+        set_eye_color('green')
         transcript = whisper.request(GetTranscript(timeout=10, phrase_time_limit=30))
         inp = transcript.transcript
         if verbose_output: print("Transcript:", inp)
-
-while i < NUM_TURNS:
-    print("Turn number:", i)
-    nao.buttons.register_callback(touch_stop)
-    if i == 0:
-        specific_role = historical_roles.get_role_for_era("1500s")
-        prompt_for_role = historical_roles.format_as_prompt(specific_role)
-        print("prompt_for_role: \n")
-        print(prompt_for_role)
-
-        reply = system_input(prompt_for_role)
-        print("ChatGPT Response:", reply)
-
-        gpt_response_in_sentences = break_into_sentences(reply)
-        for sentence in gpt_response_in_sentences:
-            send_sentence_and_animation_to_nao(sentence)
-            if interrupted:
-                print("Interruption detected. Responding to touch.")
-                # Respond with the touch message
-                nao.tts.request(NaoqiTextToSpeechRequest(
-                    "Oh, I understand that you are uninterested in this subject, let me switch."))
-                break
-
-        print("Talk now:")
-        set_eye_color('green')  # Indicate NAO is listening
-        transcript = whisper.request(GetTranscript(timeout=10, phrase_time_limit=30))
-        inp = transcript.transcript
-        print("Transcript:", inp)
-
-    else:
-        if not interrupted:
-            reply = converse("Carry on the conversation.")
-            print("ChatGPT Response:", reply)
-
-            gpt_response_in_sentences = break_into_sentences(reply)
-            for sentence in gpt_response_in_sentences:
-                send_sentence_and_animation_to_nao(sentence)
-                if interrupted:
-                    print("Interruption detected. Responding to touch.")
-                    # Respond with the touch message
-                    nao.tts.request(NaoqiTextToSpeechRequest(
-                        "Oh, I understand that you are uninterested in this subject, let me switch."))
-                    break
-
-            print("Talk now:")
-            set_eye_color('green')  # Indicate NAO is listening
-            transcript = whisper.request(GetTranscript(timeout=10, phrase_time_limit=30))
-            inp = transcript.transcript
-            print("Transcript:", inp)
-        else:
-            random_role = historical_roles.get_random_role()
-            prompt_for_random_role = historical_roles.format_as_prompt(random_role)
-            reply = system_input(prompt_for_random_role)
-            interrupted = False
-            print("ChatGPT Response:", reply)
-            gpt_response_in_sentences = break_into_sentences(reply)
-            for sentence in gpt_response_in_sentences:
-                send_sentence_and_animation_to_nao(sentence)
-                if interrupted:
-                    print("Interruption detected. Responding to touch.")
-                    # Respond with the touch message
-                    nao.tts.request(NaoqiTextToSpeechRequest(
-                        "Oh, I understand that you are uninterested in this subject, let me switch."))
-                    break
-
-            print("Talk now:")
-            set_eye_color('green')  # Indicate NAO is listening
-            transcript = whisper.request(GetTranscript(timeout=10, phrase_time_limit=30))
-            inp = transcript.transcript
-            print("Transcript:", inp)
-
-    # Only start listening again after speech completes
-    set_eye_color('blue')
-    i += 1
+    interrupted = False
 
 print("Conversation done!")
 nao.motion.request(NaoPostureRequest("Sit", 0.5))
-set_eye_color('off')  # Optionally turn off the LEDs after the conversation
+set_eye_color('off')
