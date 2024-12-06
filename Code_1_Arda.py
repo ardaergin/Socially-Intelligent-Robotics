@@ -229,25 +229,103 @@ def get_gpt_response(user_input=None, system_input=None):
     return reply
 
 
+
+def listen_for_interrupt(stop_event, interruption_callback):
+    """
+    Continuously listen for user commands while NAO is speaking.
+
+    :param stop_event: Event to stop the listening loop.
+    :param interruption_callback: Function to call if an interrupt keyword is detected.
+    """
+    while not stop_event.is_set():
+        try:
+            transcript = whisper.request(GetTranscript(timeout=5, phrase_time_limit=5))
+            user_input = transcript.transcript
+            print("User Input While Speaking:", user_input)
+
+            if check_for_interrupt_keyword(user_input):
+                print("Interrupt command detected!")
+                interruption_callback()
+                break
+        except Exception as e:
+            print(f"Error while listening: {e}")
+
+
+
 def handle_gpt_response(response):
     """
-    Process GPT response by breaking it into sentences and sending them to NAO.
-
-    :param response: GPT response string.
+    Process GPT response by breaking it into sentences and sending them to NAO,
+    while also listening for user interruptions.
     """
     sentences = break_into_sentences(response)
-    for sentence in sentences:
-        send_sentence_and_animation_to_nao(sentence)
-        if interrupted:
-            print("Interruption detected. Responding to touch.")
-            nao.tts.request(NaoqiTextToSpeechRequest("Oh, I understand. Let me switch topics."))
-            break
+    stop_event = threading.Event()
+    
+    # Define a callback to handle interruption
+    def interruption_callback():
+        global interrupted
+        interrupted = True
+        stop_event.set()
+        nao.tts.request(NaoqiTextToSpeechRequest("Oh, I understand. Let me switch topics."))
+
+    # Start listening in a separate thread
+    listener_thread = threading.Thread(target=listen_for_interrupt, args=(stop_event, interruption_callback))
+    listener_thread.start()
+
+    try:
+        for sentence in sentences:
+            send_sentence_and_animation_to_nao(sentence)
+            if interrupted:
+                print("Interruption detected. Stopping further responses.")
+                break
+    finally:
+        # Stop the listener thread
+        stop_event.set()
+        listener_thread.join()
 
 
-# Conversation loop
+
+def check_for_interrupt_keyword(user_input, keywords=None):
+    """
+    Check if the user's input contains any interrupt keyword.
+
+    :param user_input: String input from the user.
+    :param keywords: List of keywords to trigger an interruption.
+    :return: Boolean indicating whether an interrupt keyword was detected.
+    """
+    if keywords is None:
+        keywords = ["switch", "change", "stop", "please switch"]
+    
+    # Convert input to lowercase and check for keywords
+    return any(keyword in user_input.lower() for keyword in keywords)
+
+
+
+
+def detect_disinterest_via_response_length(user_responses, word_threshold=5, response_count=2):
+    """
+    Detect user disinterest based on the length of the last few responses.
+
+    :param user_responses: List of recent user responses.
+    :param word_threshold: Number of words below which a response is considered short.
+    :param response_count: Number of recent responses to analyze.
+    :return: Boolean indicating whether the user is disinterested.
+    """
+    # Keep only the last `response_count` responses
+    recent_responses = user_responses[-response_count:]
+
+    # Check if all recent responses are below the word threshold
+    return len(recent_responses) == response_count and all(
+        len(response.split()) < word_threshold for response in recent_responses
+    )
+
+
+
+
+# Initialize variables
 NUM_TURNS = 10
 FIRST_ERA = "1500s"  # Constant for the initial role
 interrupted = False
+user_responses = []  # List to store user responses for analyzing disinterest
 
 for turn_index in range(NUM_TURNS):
     print(f"Turn number: {turn_index + 1}")
@@ -272,15 +350,26 @@ for turn_index in range(NUM_TURNS):
             else:
                 reply = get_gpt_response(system_input="Carry on the previous conversation with the user.")
 
-        # Handle GPT response
+        # Handle GPT response (may set `interrupted`)
         print("GPT Response:\n", reply)
         handle_gpt_response(reply)
 
-        # Listen for user input
-        print("Talk now:")
-        set_eye_color("green")  # Indicate NAO is listening
-        transcript = whisper.request(GetTranscript(timeout=10, phrase_time_limit=30))
-        print("Transcript:\n", transcript.transcript)
+        # Skip listening step if already interrupted
+        if not interrupted:
+            print("Talk now:")
+            set_eye_color("green")  # Indicate NAO is listening
+            transcript = whisper.request(GetTranscript(timeout=10, phrase_time_limit=30))
+            user_input = transcript.transcript
+            print("Transcript:\n", user_input)
+
+            # Track user responses
+            user_responses.append(user_input)
+
+            # Detect disinterest via short responses
+            interrupted = detect_disinterest_via_response_length(user_responses)
+
+            if interrupted:
+                print("Detected user disinterest based on short responses.")
 
     except Exception as e:
         print(f"Error during turn {turn_index + 1}: {e}")
