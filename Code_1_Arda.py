@@ -268,7 +268,24 @@ def handle_gpt_response(response):
         nao.tts.request(NaoqiTextToSpeechRequest("Oh, I understand. Let me switch topics."))
 
     # Start listening in a separate thread
-    listener_thread = threading.Thread(target=listen_for_interrupt, args=(stop_event, interruption_callback))
+    def listen_during_speaking():
+        """
+        Listen for interruptions during NAO's speaking phase.
+        """
+        while not stop_event.is_set():
+            try:
+                transcript = whisper.request(GetTranscript(timeout=5, phrase_time_limit=5))
+                interrupt_input = transcript.transcript
+                print("Interrupt Input While Speaking:", interrupt_input)
+
+                if check_for_interrupt_keyword(interrupt_input):
+                    print("Interrupt command detected!")
+                    interruption_callback()
+                    break
+            except Exception as e:
+                print(f"Error while listening for interruptions: {e}")
+
+    listener_thread = threading.Thread(target=listen_during_speaking)
     listener_thread.start()
 
     try:
@@ -354,22 +371,26 @@ for turn_index in range(NUM_TURNS):
         print("GPT Response:\n", reply)
         handle_gpt_response(reply)
 
-        # Skip listening step if already interrupted
-        if not interrupted:
-            print("Talk now:")
-            set_eye_color("green")  # Indicate NAO is listening
-            transcript = whisper.request(GetTranscript(timeout=10, phrase_time_limit=30))
-            user_input = transcript.transcript
-            print("Transcript:\n", user_input)
+        # If interrupted, skip waiting for user input
+        if interrupted:
+            print("Skipping user input due to interruption.")
+            continue
 
-            # Track user responses
-            user_responses.append(user_input)
+        # Listen for proper user input after NAO finishes speaking
+        print("Talk now:")
+        set_eye_color("green")  # Indicate NAO is listening
+        transcript = whisper.request(GetTranscript(timeout=10, phrase_time_limit=30))
+        proper_user_input = transcript.transcript
+        print("Proper User Input:\n", proper_user_input)
 
-            # Detect disinterest via short responses
-            interrupted = detect_disinterest_via_response_length(user_responses)
+        # Track user responses for disinterest detection
+        user_responses.append(proper_user_input)
 
-            if interrupted:
-                print("Detected user disinterest based on short responses.")
+        # Detect disinterest via short responses
+        interrupted = detect_disinterest_via_response_length(user_responses)
+
+        if interrupted:
+            print("Detected user disinterest based on short responses.")
 
     except Exception as e:
         print(f"Error during turn {turn_index + 1}: {e}")
