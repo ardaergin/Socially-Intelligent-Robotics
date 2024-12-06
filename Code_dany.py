@@ -142,6 +142,7 @@ CONVERSATION_START_PROMPT = {
         "Talk with an adventurous tone and use real facts of that time period to tell a story. "
         "Always remain on topic unless the user requests to change the topic."
         " Avoid sensitive or private information. Ask engaging questions to guide the conversation."
+        "Only ask questions at the end of your reply."
     ),
 }
 INTRODUCTION_PROMPT = (
@@ -181,6 +182,7 @@ for turn_index in range(NUM_TURNS):
         set_eye_color('green')
         transcript = whisper.request(GetTranscript(timeout=10, phrase_time_limit=30))
         inp = transcript.transcript
+        add_context_to_conversation()
         if verbose_output: print("Transcript:", inp)
     interrupted = False
 
