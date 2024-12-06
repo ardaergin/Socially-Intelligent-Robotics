@@ -3,22 +3,20 @@ import random
 import threading
 import time
 import nltk
+from dotenv import load_dotenv
 from nltk.tokenize import sent_tokenize
 from sic_framework.devices import Nao
-from sic_framework.devices.common_desktop.desktop_camera import DesktopCameraConf
 from sic_framework.devices.common_naoqi.naoqi_leds import NaoFadeRGBRequest
 from sic_framework.devices.common_naoqi.naoqi_motion import NaoqiAnimationRequest, NaoPostureRequest
 from sic_framework.devices.common_naoqi.naoqi_text_to_speech import (
     NaoqiTextToSpeechRequest,
 )
-from sic_framework.devices.desktop import Desktop
 from sic_framework.services.openai_gpt.gpt import GPT, GPTConf, OpenAI
 from sic_framework.services.openai_whisper_speech_to_text.whisper_speech_to_text import (
     GetTranscript,
     SICWhisper,
     WhisperConf,
 )
-from dotenv import load_dotenv
 from HistoricalRoles import HistoricalRoles
 
 nltk.download('punkt_tab')
@@ -97,6 +95,15 @@ def get_gpt_response(text_input, role="user"):
     return reply
 
 
+def handle_gpt_response(reply):
+    global interrupted
+    sentences = break_into_sentences(reply)
+    for sentence in sentences:
+        send_sentence_and_animation_to_nao(sentence)
+        if interrupted:
+            break
+
+
 def touch_stop(event):
     global interrupted
     sensor = event.value
@@ -105,6 +112,7 @@ def touch_stop(event):
 
     if touch_detection:
         if verbose_output: print("Touch detected! Stopping current speech and setting interruption flag.")
+        nao.tts.request(NaoqiTextToSpeechRequest("Oh, I understand. Let me switch to a different time period in Amsterdam."))
         interrupted = True
 
     #####################
