@@ -23,7 +23,6 @@ from HistoricalRoles import HistoricalRoles
 
 nltk.download('punkt_tab')
 
-
 # Environment Variables
 load_dotenv()
 openai_key = os.getenv("OPENAI_KEY")
@@ -87,62 +86,71 @@ def break_into_sentences(text):
     return sent_tokenize(text)
 
 
-def converse(user_input):
-    conversation.append({"role": "user", "content": user_input})
+def get_gpt_response(text_input, role="user"):
+    conversation.append({"role": "user", "content": text_input})
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=conversation,
     )
     reply = response.choices[0].message.content
     conversation.append({"role": "assistant", "content": reply})
-
     return reply
 
-
-def system_input(user_input):
-    conversation.append({"role": "system", "content": user_input})
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=conversation,
-    )
-    reply = response.choices[0].message.content
-    conversation.append({"role": "assistant", "content": reply})
-
-    return reply
 
 def touch_stop(event):
     global interrupted
     sensor = event.value
-    print(f"sensor info 0: {sensor[0]}")
-    print(f"sensor info 1: {sensor[1]}")
-    print(event.value)
-
     # Detect if ANY touch sensor is activated
-    # We should change this to only head or something
     touch_detection = any(sensor_info[1] for sensor_info in sensor)
 
     if touch_detection:
-        print("Touch detected! Stopping current speech and setting interruption flag.")
-        # Stop the current speech
-        # nao.tts.stop()
-        # Set the interruption flag
+        if verbose_output: print("Touch detected! Stopping current speech and setting interruption flag.")
         interrupted = True
 
+    #####################
+    # conversation loop #
+    #####################
 
 
-
-
-
-# Start the conversation loop
+verbose_output = False
 historical_roles = HistoricalRoles()
 NUM_TURNS = 10
 interrupted = False
 i = 0
 # with starting prompt
-conversation = [{"role": "system",
-                 "content": "You are a social robot carrying out an experiment. You will only talk to one user at a time. The scenario is that you are a time traveler that has been to different periods in time to amsterdm. Talk with an adventurous tone and use real facts of that time period to tell a story of that time period. Always remain on the topic unless you are asked to change it. Don't talk about sensitive or private information about the user. Ask engaging questions."}]
+CONVERSATION_START_PROMPT = {
+    "role": "system",
+    "content": (
+        "You are a social robot carrying out an experiment. You will only talk to one user at a time. "
+        "The scenario is that you are a time traveler who has visited different periods of Amsterdam. "
+        "You will receive different roles, act appropriately"
+        "Talk with an adventurous tone and use real facts of that time period to tell a story. "
+        "Always remain on topic unless the user requests to change the topic."
+        " Avoid sensitive or private information. Ask engaging questions to guide the conversation."
+    ),
+}
+conversation = [CONVERSATION_START_PROMPT]
 
+for turn_index in range(NUM_TURNS):
+    if verbose_output: print(f"Turn number: {turn_index + 1}")
 
+    # register button interrupt callback
+    nao.buttons.register_callback(touch_stop)
+
+    # get random role
+    random_role = historical_roles.get_random_role()
+    prompt_for_random_role = historical_roles.format_as_prompt(random_role)
+
+    # talk loop
+    while not interrupted:
+        pass
+
+        # always end by asking a question:
+        print("You can talk now:")
+        set_eye_color('green')  # Indicate NAO is listening
+        transcript = whisper.request(GetTranscript(timeout=10, phrase_time_limit=30))
+        inp = transcript.transcript
+        if verbose_output: print("Transcript:", inp)
 
 while i < NUM_TURNS:
     print("Turn number:", i)
