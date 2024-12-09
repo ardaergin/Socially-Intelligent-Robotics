@@ -104,16 +104,6 @@ def get_gpt_response(text_input, role="user"):
     return reply
 
 
-# def handle_gpt_response(reply):
-#     global interrupted
-#     sentences = break_into_sentences(reply)
-#     set_eye_color('blue')
-#     for sentence in sentences:
-#         send_sentence_and_animation_to_nao(sentence)
-#         if interrupted:
-#             break
-
-
 def touch_stop(event):
     global interrupted
     sensor = event.value
