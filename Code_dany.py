@@ -145,14 +145,14 @@ CONTINUE_CONVERSATION_PROMPT = (
     "After talking for about three sentences ask an interactive question."
 )
 
+# register button interrupt callback
+nao.buttons.register_callback(touch_stop)
+
 for turn_index in range(NUM_TURNS):
     if verbose_output: print(f"Turn number: {turn_index + 1}")
 
     # reset conversation
     conversation = [CONVERSATION_START_PROMPT]
-
-    # register button interrupt callback
-    nao.buttons.register_callback(touch_stop)
 
     # get random role
     random_role = historical_roles.get_random_role()
