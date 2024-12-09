@@ -17,6 +17,7 @@ from sic_framework.services.openai_whisper_speech_to_text.whisper_speech_to_text
     SICWhisper,
     WhisperConf,
 )
+from sic_framework.devices.desktop import Desktop
 from HistoricalRoles import HistoricalRoles
 
 nltk.download('punkt_tab')
@@ -39,6 +40,10 @@ gpt_conf = GPTConf(openai_key=openai_key, model="gpt-4o-mini")
 gpt = GPT(conf=gpt_conf)
 client = OpenAI(api_key=openai_key)
 
+# connect to desktop mic
+
+desktop = Desktop()
+whisper.connect(desktop.mic)
 
 # Function to change NAO's eye color
 def set_eye_color(color):
@@ -166,10 +171,6 @@ for turn_index in range(NUM_TURNS):
     random_role = historical_roles.get_random_role()
     role_prompt = historical_roles.format_as_prompt(random_role)
     add_context_to_conversation(role_prompt, "system")
-
-    # introduce yourself
-    reply = get_gpt_response(INTRODUCTION_PROMPT, "user")
-    send_sentence_and_animation_to_nao(reply)
 
     # talk loop
     while not interrupted:
