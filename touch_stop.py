@@ -1,6 +1,7 @@
 
 from sic_framework.devices import Nao
 
+nao = Nao(ip="10.0.0.240")
 
 def test_func(a):
     print("Pressed", a.value)
@@ -19,8 +20,6 @@ def touch_stop(sensor):
     #         NaoqiTextToSpeechRequest("Oh, I understand. Let me switch to a different time period in Amsterdam."))
     #     interrupted = True
 
-
-nao = Nao(ip="10.0.0.240")
 
 nao.buttons.register_callback(test_func)
 
