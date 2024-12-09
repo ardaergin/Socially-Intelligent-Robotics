@@ -121,7 +121,7 @@ def touch_stop(event):
     #####################
 
 
-verbose_output = False
+verbose_output = True
 historical_roles = HistoricalRoles()
 NUM_TURNS = 10
 interrupted = False
