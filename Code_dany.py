@@ -45,6 +45,7 @@ client = OpenAI(api_key=openai_key)
 desktop = Desktop()
 whisper.connect(desktop.mic)
 
+
 # Function to change NAO's eye color
 def set_eye_color(color):
     if color == 'green':
@@ -105,27 +106,16 @@ def get_gpt_response(text_input, role="user"):
 
 
 def touch_stop(event):
-    global interrupted, last_pressed_time
+    global interrupted
+    sensor = event.value
+    # Detect if ANY touch sensor is activated
+    touch_detection = any(sensor_info[1] for sensor_info in sensor)
 
-    # Get the current time
-    current_time = time.time()
-
-    # If the time since last press is less than the cooldown, skip processing
-    if last_pressed_time is not None and current_time - last_pressed_time < cooldown_duration:
-        print("Cooldown active, skipping button press.")
-        return
-
-    sensor_output = event.value
-    for sensor_data in sensor_output:
-        sensor_name, is_pressed, _ = sensor_data
-        print(sensor_name, is_pressed)
-        if is_pressed:  # Check if the sensor is pressed (True)
-            if 'Foot' in sensor_name:  # Check if the sensor is related to the foot
-                if verbose_output: print(f"{sensor_name} pressed!")
-                nao.tts.request(NaoqiTextToSpeechRequest("Oh, I understand. Let me switch to a different time period in Amsterdam."))
-                interrupted = True
-                # Update last pressed time to implement the cooldown
-                last_pressed_time = current_time
+    if touch_detection:
+        if verbose_output: print("Touch detected! Stopping current speech and setting interruption flag.")
+        nao.tts.request(
+            NaoqiTextToSpeechRequest("Oh, I understand. Let me switch to a different time period in Amsterdam."))
+        interrupted = True
 
 
 verbose_output = True
@@ -171,6 +161,7 @@ for turn_index in range(NUM_TURNS):
 
     # talk loop
     while not interrupted:
+        if verbose_output: print("in talk loop")
         # robot talk code
         reply = get_gpt_response(CONTINUE_CONVERSATION_PROMPT)
         sentences = break_into_sentences(reply)
