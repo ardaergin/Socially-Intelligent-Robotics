@@ -120,7 +120,7 @@ def touch_stop(event):
 
 verbose_output = False
 historical_roles = HistoricalRoles()
-NUM_TURNS = 10
+NUM_TURNS = 3
 interrupted = False
 i = 0
 
@@ -146,7 +146,7 @@ CONTINUE_CONVERSATION_PROMPT = (
 )
 
 # register button interrupt callback
-nao.buttons.register_callback(touch_stop)
+# nao.buttons.register_callback(touch_stop)
 
 for turn_index in range(NUM_TURNS):
     if verbose_output: print(f"Turn number: {turn_index + 1}")
