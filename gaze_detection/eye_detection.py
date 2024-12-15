@@ -74,6 +74,22 @@ class EyeDetectionComponent(SICComponent):
 
         return BoundingBoxesMessage(eyes)
 
+    def are_eyes_on_image(self, image):
+        img = array(image).astype(np.uint8)
+
+        gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+
+        eyes = self.eyeCascade.detectMultiScale(
+            gray,
+            scaleFactor=1.1,
+            minNeighbors=3,
+            minSize=(int(self.params.minW), int(self.params.minH)),
+        )
+
+        eyes = [BoundingBox(x, y, w, h) for (x, y, w, h) in eyes]
+
+        return len(eyes) >= 2
+
 
 class EyeDetection(SICConnector):
     component_class = EyeDetectionComponent

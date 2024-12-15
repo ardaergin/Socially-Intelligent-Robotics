@@ -33,30 +33,24 @@ eyes_buffer = queue.Queue(maxsize=1)
 def on_image(image_message: CompressedImageMessage):
     imgs_buffer.put(image_message.image)
 
+
 def on_faces(message: BoundingBoxesMessage):
     faces_buffer.put(message.bboxes)
 
+
 # I don't understand how exactly this is supposed to work:
-def on_eyes(message:BoundingBoxesMessage):
+def on_eyes(message: BoundingBoxesMessage):
     eyes_buffer.put(message.bboxes)
+
 
 # Create camera configuration using fx and fy to resize the image along x- and y-axis, and possibly flip image
 conf = DesktopCameraConf(fx=1.0, fy=1.0, flip=1)
 
 # Connect to the services
 desktop = Desktop(camera_conf=conf)
-
-face_rec = FaceDetection()
 eye_rec = EyeDetection()
-# CUSTOM FACE DETECTION EXAMPLE
-# face_rec = CustomFaceDetection()
-
-# Feed the camera images into the face recognition component
-face_rec.connect(desktop.camera)
 eye_rec.connect(desktop.camera)
-# Send back the outputs to this program
 desktop.camera.register_callback(on_image)
-face_rec.register_callback(on_faces)
 eye_rec.register_callback(on_eyes)
 
 """
@@ -73,16 +67,16 @@ while True:
     img = imgs_buffer.get()
     faces = faces_buffer.get()
 
-    #face_bboxes_message = BoundingBoxesMessage(faces)
+    # face_bboxes_message = BoundingBoxesMessage(faces)
 
     # Send face bounding boxes to FaceEyeDetection
-    #eye_rec.send_message(face_bboxes_message)
+    # eye_rec.send_message(face_bboxes_message)
 
     # Retrieve detected eyes
     eyes = eyes_buffer.get()
 
     for face in faces:
-        #utils_cv2.draw_bbox_on_image(face, img, color=(0, 0, 255))
+        # utils_cv2.draw_bbox_on_image(face, img, color=(0, 0, 255))
 
         # Extract face bounding box
         face_x, face_y, face_w, face_h = face.x, face.y, face.w, face.h
@@ -99,11 +93,9 @@ while True:
                     and face_y <= eye_y + eye_h <= face_y + face_h
             ):
                 # Eye is inside the face; draw the eye bounding box
-                #utils_cv2.draw_bbox_on_image(eye, img, color=(0, 128, 255))  # Orange for eyes
+                # utils_cv2.draw_bbox_on_image(eye, img, color=(0, 128, 255))  # Orange for eyes
                 face_eyes.append(eye)
 
-
     print(f"I see {len(face_eyes)} eyes!")
-    #cv2.imshow("", img)
-    #cv2.waitKey(1)
-
+    # cv2.imshow("", img)
+    # cv2.waitKey(1)

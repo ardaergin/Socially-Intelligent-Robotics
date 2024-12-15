@@ -19,6 +19,16 @@ from sic_framework.services.openai_whisper_speech_to_text.whisper_speech_to_text
 )
 from sic_framework.devices.desktop import Desktop
 from HistoricalRoles import HistoricalRoles
+from sic_framework.core.message_python2 import (
+    BoundingBoxesMessage,
+    CompressedImageMessage,
+)
+from sic_framework.devices.common_desktop.desktop_camera import DesktopCameraConf
+from sic_framework.devices.desktop import Desktop
+from sic_framework.services.face_detection.face_detection import FaceDetection
+from custom_components.eye_detection import EyeDetection
+from gaze_detection import eye_detection
+import queue
 
 nltk.download('punkt_tab')
 
@@ -41,9 +51,16 @@ gpt = GPT(conf=gpt_conf)
 client = OpenAI(api_key=openai_key)
 
 # connect to desktop mic
-
-desktop = Desktop()
+conf = DesktopCameraConf(fx=1.0, fy=1.0, flip=1)
+desktop = Desktop(camera_conf=conf)
 whisper.connect(desktop.mic)
+
+# face detection stuff
+# Connect to the services
+eye_rec = EyeDetection()
+imgs_buffer = queue.Queue(maxsize=1)
+# Feed the camera images into the face recognition component
+eye_rec.connect(desktop.camera)
 
 
 # Function to change NAO's eye color
@@ -105,9 +122,17 @@ def get_gpt_response(text_input, role="user"):
     return reply
 
 
+def on_image(image_message: CompressedImageMessage):
+    imgs_buffer.put(image_message.image)
+
+
+desktop.camera.register_callback(on_image)
+
+# parameters
 verbose_output = False
 historical_roles = HistoricalRoles()
-NUM_TURNS = 3
+NUM_TURNS = 10
+interrupted = False
 i = 0
 
 # with starting prompt
@@ -143,7 +168,7 @@ for turn_index in range(NUM_TURNS):
     add_context_to_conversation(role_prompt, "system")
 
     # talk loop
-    for _ in range(10):
+    while not interrupted:
         if verbose_output: print("in talk loop")
         # robot talk code
         reply = get_gpt_response(CONTINUE_CONVERSATION_PROMPT)
@@ -151,6 +176,10 @@ for turn_index in range(NUM_TURNS):
         set_eye_color('blue')
         for sentence in sentences:
             send_sentence_and_animation_to_nao(sentence)
+            if not eye_rec.are_eyes_on_image(imgs_buffer.get()):
+                break
+        if not eye_rec.are_eyes_on_image(imgs_buffer.get()):
+            break
         # always end by asking a question and then get response from user
         print("You can talk now:")
         set_eye_color('green')
@@ -158,6 +187,7 @@ for turn_index in range(NUM_TURNS):
         user_input = transcript.transcript
         add_context_to_conversation(user_input, "user")
         if verbose_output: print("Transcript:", user_input)
+    interrupted = False
 
 print("Conversation done!")
 nao.motion.request(NaoPostureRequest("Sit", 0.5))
