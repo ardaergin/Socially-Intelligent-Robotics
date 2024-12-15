@@ -1,4 +1,3 @@
-
 from sic_framework.devices import Nao
 
 nao = Nao(ip="10.0.0.240")
